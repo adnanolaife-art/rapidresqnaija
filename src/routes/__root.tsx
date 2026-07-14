@@ -87,10 +87,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "RapidResQ Naija — One tap. Help on the way." },
       {
         property: "og:description",
-        content: "Nigeria's unified emergency response network. One SOS reaches every agency near you.",
+        content: "Nigeria's unified emergency response network. Reach police, fire, ambulance and FRSC with one SOS — GPS-located, family notified, help dispatched.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "RapidResQ Naija — One tap. Help on the way." },
+      { name: "twitter:description", content: "Nigeria's unified emergency response network. Reach police, fire, ambulance and FRSC with one SOS — GPS-located, family notified, help dispatched." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cda92979-cba2-4165-969b-bcf2b13cd473/id-preview-46d866ee--f0b56b3d-5f21-479f-8307-ebb0ef5faa3a.lovable.app-1784046294351.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cda92979-cba2-4165-969b-bcf2b13cd473/id-preview-46d866ee--f0b56b3d-5f21-479f-8307-ebb0ef5faa3a.lovable.app-1784046294351.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
