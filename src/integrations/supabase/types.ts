@@ -14,16 +14,162 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      incident_media: {
+        Row: {
+          created_at: string
+          id: string
+          incident_id: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          incident_id: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          incident_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_media_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidents: {
+        Row: {
+          address: string | null
+          assignee_id: string | null
+          citizen_id: string
+          created_at: string
+          description: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          status: Database["public"]["Enums"]["incident_status"]
+          type: Database["public"]["Enums"]["incident_type"]
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          assignee_id?: string | null
+          citizen_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          status?: Database["public"]["Enums"]["incident_status"]
+          type: Database["public"]["Enums"]["incident_type"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          assignee_id?: string | null
+          citizen_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          status?: Database["public"]["Enums"]["incident_status"]
+          type?: Database["public"]["Enums"]["incident_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_my_roles: {
+        Args: never
+        Returns: Database["public"]["Enums"]["app_role"][]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      responder_role_for_type: {
+        Args: { _t: Database["public"]["Enums"]["incident_type"] }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "citizen"
+        | "responder_frsc"
+        | "responder_police"
+        | "responder_fire"
+        | "responder_hospital"
+        | "admin"
+      incident_status:
+        | "pending"
+        | "accepted"
+        | "en_route"
+        | "on_scene"
+        | "resolved"
+        | "cancelled"
+      incident_type: "medical" | "fire" | "police" | "traffic" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +296,24 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "citizen",
+        "responder_frsc",
+        "responder_police",
+        "responder_fire",
+        "responder_hospital",
+        "admin",
+      ],
+      incident_status: [
+        "pending",
+        "accepted",
+        "en_route",
+        "on_scene",
+        "resolved",
+        "cancelled",
+      ],
+      incident_type: ["medical", "fire", "police", "traffic", "other"],
+    },
   },
 } as const
