@@ -128,15 +128,15 @@ function MediaGrid({
       {q.data && q.data.length === 0 && (
         <div className="col-span-full text-xs text-muted-foreground">No photos attached.</div>
       )}
-      {q.data?.map((m) => (
+      {q.data?.filter((m) => m.url).map((m) => (
         <a
           key={m.path}
-          href={m.url}
+          href={m.url ?? undefined}
           target="_blank"
           rel="noreferrer"
           className="aspect-square overflow-hidden rounded-lg border border-border"
         >
-          <img src={m.url} alt="" className="h-full w-full object-cover" />
+          <img src={m.url ?? undefined} alt="" className="h-full w-full object-cover" />
         </a>
       ))}
     </div>
