@@ -19,7 +19,8 @@ export async function notifyResponders(incidentId: string) {
     .single();
   if (error || !incident) return;
 
-  const role = ROLE_FOR_TYPE[incident.type] ?? "responder_police";
+  const role = (ROLE_FOR_TYPE[incident.type] ?? "responder_police") as
+    | "responder_frsc" | "responder_police" | "responder_fire" | "responder_hospital";
   const { data: matchedRoles } = await supabaseAdmin
     .from("user_roles")
     .select("user_id")
