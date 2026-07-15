@@ -116,7 +116,7 @@ function MediaGrid({
   fetcher,
 }: {
   incidentId: string;
-  fetcher: (opts: { data: { incidentId: string } }) => Promise<{ path: string; url: string }[]>;
+  fetcher: (opts: { data: { incidentId: string } }) => Promise<{ path: string; url: string | null }[]>;
 }) {
   const q = useQuery({
     queryKey: ["incident-media", incidentId],
