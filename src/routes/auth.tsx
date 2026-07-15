@@ -1,26 +1,75 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Siren, Phone, Mail } from "lucide-react";
+import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Siren, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth, type AppRole } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in to RapidResQ Naija" },
-      { name: "description", content: "Sign in or create your RapidResQ Naija account to activate one-tap SOS." },
+      { name: "description", content: "Sign in or create your RapidResQ Naija account." },
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Auth,
+  component: AuthPage,
 });
 
-function Auth() {
+type Mode = "signin" | "signup";
+
+const ROLE_OPTIONS: { value: AppRole; label: string; hint: string }[] = [
+  { value: "citizen", label: "Citizen", hint: "I want to report emergencies" },
+  { value: "responder_police", label: "Police", hint: "Officer / dispatcher" },
+  { value: "responder_fire", label: "Fire & Rescue", hint: "Firefighter / rescue" },
+  { value: "responder_hospital", label: "Hospital / Ambulance", hint: "Medical responder" },
+  { value: "responder_frsc", label: "FRSC", hint: "Road safety officer" },
+];
+
+function AuthPage() {
+  const [mode, setMode] = useState<Mode>("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [role, setRole] = useState<AppRole>("citizen");
+  const [busy, setBusy] = useState(false);
+  const navigate = useNavigate();
+  const { refreshRoles } = useAuth();
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { full_name: fullName, phone, role },
+          },
+        });
+        if (error) throw error;
+        toast.success("Account created. Welcome!");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast.success("Signed in");
+      }
+      await refreshRoles();
+      navigate({ to: "/dashboard" });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden overflow-hidden bg-primary p-10 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
-        <div
-          className="absolute inset-0 opacity-30"
-          style={{ background: "radial-gradient(50% 60% at 20% 20%, oklch(1 0 0 / 0.25), transparent 70%), radial-gradient(40% 50% at 90% 80%, oklch(0.58 0.24 27 / 0.35), transparent 70%)" }}
-          aria-hidden
-        />
         <Link to="/" className="relative flex items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-foreground/15">
             <Siren className="h-5 w-5" />
@@ -28,16 +77,22 @@ function Auth() {
           <span className="text-base font-bold">RapidResQ Naija</span>
         </Link>
         <div className="relative">
-          <h2 className="text-4xl font-extrabold leading-tight">One tap.<br />Help on the way.</h2>
+          <h2 className="text-4xl font-extrabold leading-tight">
+            One tap.
+            <br />
+            Help on the way.
+          </h2>
           <p className="mt-4 max-w-sm text-primary-foreground/85">
-            Sign in to activate SOS, add your next-of-kin and stay ready before you need it.
+            Citizens report. Responders receive. Admins oversee. All in one secure network.
           </p>
         </div>
-        <p className="relative text-xs text-primary-foreground/70">Protected by Lovable Cloud. Your data is never sold.</p>
+        <p className="relative text-xs text-primary-foreground/70">
+          Protected by Lovable Cloud. Your data is never sold.
+        </p>
       </div>
       <div className="flex items-center justify-center px-4 py-12 sm:px-8">
         <div className="w-full max-w-sm">
-          <div className="lg:hidden">
+          <div className="lg:hidden mb-6">
             <Link to="/" className="flex items-center gap-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                 <Siren className="h-5 w-5" />
@@ -45,24 +100,101 @@ function Auth() {
               <span className="text-base font-bold">RapidResQ Naija</span>
             </Link>
           </div>
-          <h1 className="mt-8 text-3xl font-bold tracking-tight lg:mt-0">Welcome back</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Sign in with phone or email to continue.</p>
-          <div className="mt-8 grid gap-3">
-            <button type="button" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
-              <Phone className="h-4 w-4" /> Continue with phone
+          <div className="mb-6 inline-flex rounded-xl bg-muted p-1 text-sm">
+            <button
+              type="button"
+              onClick={() => setMode("signin")}
+              className={`rounded-lg px-4 py-1.5 font-medium ${mode === "signin" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+            >
+              Sign in
             </button>
-            <button type="button" className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold hover:bg-accent">
-              <Mail className="h-4 w-4" /> Continue with email
+            <button
+              type="button"
+              onClick={() => setMode("signup")}
+              className={`rounded-lg px-4 py-1.5 font-medium ${mode === "signup" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+            >
+              Create account
             </button>
           </div>
-          <div className="mt-8 flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />OR<span className="h-px flex-1 bg-border" />
-          </div>
-          <div className="mt-6 rounded-xl border border-dashed border-border bg-muted/40 p-4 text-xs text-muted-foreground">
-            Authentication is not yet wired up. Enable Lovable Cloud to activate real sign-in with
-            phone OTP and email.
-          </div>
-          <p className="mt-8 text-center text-xs text-muted-foreground">
+
+          <h1 className="text-3xl font-bold tracking-tight">
+            {mode === "signin" ? "Welcome back" : "Join RapidResQ"}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {mode === "signin"
+              ? "Sign in to access your dashboard."
+              : "Create your account. Admins are granted separately by an existing admin."}
+          </p>
+
+          <form onSubmit={onSubmit} className="mt-6 grid gap-3">
+            {mode === "signup" && (
+              <>
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium">Full name</label>
+                  <input
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium">Phone</label>
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+234 …"
+                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium">I am a…</label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as AppRole)}
+                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  >
+                    {ROLE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label} — {o.hint}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+            <div className="grid gap-1.5">
+              <label className="text-xs font-medium">Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <label className="text-xs font-medium">Password</label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={busy}
+              className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            >
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+              {mode === "signin" ? "Sign in" : "Create account"}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-xs text-muted-foreground">
             By continuing you agree to our{" "}
             <Link to="/terms" className="underline hover:text-foreground">Terms</Link> and{" "}
             <Link to="/privacy" className="underline hover:text-foreground">Privacy</Link>.
