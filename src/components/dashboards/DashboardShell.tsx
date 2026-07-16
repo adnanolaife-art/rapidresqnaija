@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Siren, LogOut } from "lucide-react";
 
 import { ROLE_LABEL, useAuth, type AppRole } from "@/hooks/useAuth";
+import { MessagesInbox } from "@/components/messaging/MessagesInbox";
 
 export function DashboardShell({
   role,
@@ -32,6 +33,7 @@ export function DashboardShell({
               <div className="font-medium">{email}</div>
               <div className="text-xs text-muted-foreground">{ROLE_LABEL[role]}</div>
             </div>
+            <MessagesInbox />
             <button
               onClick={async () => {
                 await signOut();

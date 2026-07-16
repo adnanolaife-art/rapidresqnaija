@@ -85,6 +85,42 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_broadcast: boolean
+          read_at: string | null
+          recipient_id: string | null
+          sender_id: string
+          subject: string | null
+          target_role: Database["public"]["Enums"]["app_role"] | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_broadcast?: boolean
+          read_at?: string | null
+          recipient_id?: string | null
+          sender_id: string
+          subject?: string | null
+          target_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_broadcast?: boolean
+          read_at?: string | null
+          recipient_id?: string | null
+          sender_id?: string
+          subject?: string | null
+          target_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -92,6 +128,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          suspended: boolean
           updated_at: string
         }
         Insert: {
@@ -100,6 +137,7 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
+          suspended?: boolean
           updated_at?: string
         }
         Update: {
@@ -108,6 +146,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          suspended?: boolean
           updated_at?: string
         }
         Relationships: []
