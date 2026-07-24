@@ -86,12 +86,32 @@ function IncidentsPanel() {
     };
   }, [all.data]);
 
+  const mapPoints: MapIncident[] = (all.data ?? []).map((i) => ({
+    id: i.id,
+    lat: i.lat as number | null,
+    lng: i.lng as number | null,
+    type: i.type,
+    status: i.status,
+    address: i.address,
+    description: i.description,
+    created_at: i.created_at,
+  }));
+
   return (
     <div>
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <Stat label="Total incidents" value={stats.total} />
         <Stat label="Active" value={stats.active} />
         <Stat label="Resolved" value={stats.resolved} />
+      </div>
+      <div className="mb-4">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Live incident map</h2>
+          <span className="text-xs text-muted-foreground">
+            {mapPoints.filter((p) => p.lat != null && p.lng != null).length} geolocated
+          </span>
+        </div>
+        <IncidentsMap incidents={mapPoints} height={380} />
       </div>
       <div className="rounded-2xl border border-border bg-card">
         <div className="border-b border-border px-4 py-3 text-sm font-semibold">Recent incidents (live)</div>
