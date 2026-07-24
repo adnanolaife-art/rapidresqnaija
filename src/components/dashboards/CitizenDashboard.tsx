@@ -1,12 +1,13 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Camera, Loader2, MapPin, Siren, Trash2, X } from "lucide-react";
+import { Camera, Loader2, MapPin, Siren, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { createIncident, listMyIncidents } from "@/lib/incidents.functions";
+import { IncidentsMap, type MapIncident } from "@/components/maps/IncidentsMap";
 import { IncidentStatusBadge, IncidentTypeIcon, TYPE_LABEL, type IncidentType } from "./shared";
 
 type SelectedImage = { file: File; preview: string };
