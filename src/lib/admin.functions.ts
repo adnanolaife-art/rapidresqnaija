@@ -51,11 +51,30 @@ export const adminSuspendUser = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SuspendInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
+    if (data.userId === context.userId) throw new Error("You cannot suspend your own account.");
+    await assertTargetNotAdmin(context, data.userId);
     const { error } = await context.supabase
       .from("profiles")
       .update({ suspended: data.suspended })
       .eq("id", data.userId);
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const DeleteInput = z.object({ userId: z.string().uuid() });
+export const adminDeleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => DeleteInput.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.userId === context.userId) throw new Error("You cannot delete your own account.");
+    await assertTargetNotAdmin(context, data.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (error) throw new Error(error.message);
+    // Best-effort cleanup (cascades should handle most)
+    await supabaseAdmin.from("profiles").delete().eq("id", data.userId);
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);
     return { ok: true };
   });
 
