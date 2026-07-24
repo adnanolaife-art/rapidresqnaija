@@ -10,6 +10,7 @@ import {
   updateIncidentStatus,
   getIncidentMedia,
 } from "@/lib/incidents.functions";
+import { IncidentsMap, type MapIncident } from "@/components/maps/IncidentsMap";
 import { IncidentStatusBadge, IncidentTypeIcon, TYPE_LABEL, type IncidentType } from "./shared";
 
 const NEXT: Record<string, { label: string; next: "accepted" | "en_route" | "on_scene" | "resolved" }[]> = {
