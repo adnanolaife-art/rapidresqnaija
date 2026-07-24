@@ -79,21 +79,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "RapidResQ Naija — One tap. Help on the way." },
+      { title: "RapidResQ Naija — Every second counts." },
       {
         name: "description",
         content:
           "Nigeria's unified emergency response network. Reach police, fire, ambulance and FRSC with one SOS — GPS-located, family notified, help dispatched.",
       },
       { name: "theme-color", content: "#1f8a4d" },
-      { property: "og:title", content: "RapidResQ Naija — One tap. Help on the way." },
+      { property: "og:title", content: "RapidResQ Naija — Every second counts." },
       {
         property: "og:description",
         content: "Nigeria's unified emergency response network. Reach police, fire, ambulance and FRSC with one SOS — GPS-located, family notified, help dispatched.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "RapidResQ Naija — One tap. Help on the way." },
+      { name: "twitter:title", content: "RapidResQ Naija — Every second counts." },
       { name: "twitter:description", content: "Nigeria's unified emergency response network. Reach police, fire, ambulance and FRSC with one SOS — GPS-located, family notified, help dispatched." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cda92979-cba2-4165-969b-bcf2b13cd473/id-preview-46d866ee--f0b56b3d-5f21-479f-8307-ebb0ef5faa3a.lovable.app-1784046294351.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cda92979-cba2-4165-969b-bcf2b13cd473/id-preview-46d866ee--f0b56b3d-5f21-479f-8307-ebb0ef5faa3a.lovable.app-1784046294351.png" },
