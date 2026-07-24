@@ -43,7 +43,7 @@ function Hero() {
             <Activity className="h-3.5 w-3.5" /> Live across 36 states
           </span>
           <h1 className="mt-5 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-            One tap. <span className="text-primary">Help on the way.</span>
+            Every second counts. <span className="text-primary">Help is closer than you think.</span>
           </h1>
           <p className="mt-5 max-w-xl text-lg text-muted-foreground">
             RapidResQ Naija unites police, fire, ambulance and FRSC into a single SOS. Your
