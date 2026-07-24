@@ -140,10 +140,12 @@ function IncidentsPanel() {
 
 function UsersPanel() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const listFn = useServerFn(adminListUsers);
   const suspendFn = useServerFn(adminSuspendUser);
   const roleFn = useServerFn(adminSetRole);
   const dmFn = useServerFn(adminSendDirectMessage);
+  const deleteFn = useServerFn(adminDeleteUser);
   const [q, setQ] = useState("");
   const [dmTo, setDmTo] = useState<string | null>(null);
   const [dmBody, setDmBody] = useState("");
