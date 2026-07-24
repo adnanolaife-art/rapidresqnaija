@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { listAllIncidents } from "@/lib/incidents.functions";
 import {
   adminBroadcast,
+  adminDeleteUser,
   adminListConversations,
   adminListUsers,
   adminSendDirectMessage,
@@ -15,7 +16,8 @@ import {
   adminSuspendUser,
 } from "@/lib/admin.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ROLE_LABEL, type AppRole } from "@/hooks/useAuth";
+import { ROLE_LABEL, useAuth, type AppRole } from "@/hooks/useAuth";
+import { IncidentsMap, type MapIncident } from "@/components/maps/IncidentsMap";
 import { IncidentStatusBadge, IncidentTypeIcon, TYPE_LABEL, type IncidentType } from "./shared";
 
 const ROLES: AppRole[] = [
