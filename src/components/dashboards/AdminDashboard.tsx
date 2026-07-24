@@ -239,41 +239,74 @@ function UsersPanel() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <select
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (!v) return;
-                  const [action, role] = v.split(":") as ["add" | "remove", AppRole];
-                  setRole.mutate({ id: u.id, action, role });
-                  e.target.value = "";
-                }}
-                className="rounded-md border border-border bg-background px-2 py-1 text-xs"
-              >
-                <option value="">Roles…</option>
-                {ROLES.map((r) => (
-                  <option key={`add:${r}`} value={`add:${r}`}>
-                    ➕ {ROLE_LABEL[r]}
-                  </option>
-                ))}
-                {ROLES.map((r) => (
-                  <option key={`remove:${r}`} value={`remove:${r}`}>
-                    ➖ {ROLE_LABEL[r]}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => suspend.mutate({ id: u.id, suspended: !u.suspended })}
-                className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
-              >
-                {u.suspended ? <ShieldCheck className="h-3 w-3" /> : <ShieldAlert className="h-3 w-3" />}
-                {u.suspended ? "Reinstate" : "Suspend"}
-              </button>
-              <button
-                onClick={() => setDmTo(u.id)}
-                className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                <Send className="h-3 w-3" /> Message
-              </button>
+              {(() => {
+                const isSelf = u.id === user?.id;
+                const isAdminTarget = (u.roles ?? []).includes("admin");
+                const protectedTarget = isSelf || isAdminTarget;
+                return (
+                  <>
+                    <select
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (!v) return;
+                        const [action, role] = v.split(":") as ["add" | "remove", AppRole];
+                        setRole.mutate({ id: u.id, action, role });
+                        e.target.value = "";
+                      }}
+                      className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                    >
+                      <option value="">Roles…</option>
+                      {ROLES.map((r) => (
+                        <option key={`add:${r}`} value={`add:${r}`}>
+                          ➕ {ROLE_LABEL[r]}
+                        </option>
+                      ))}
+                      {ROLES.map((r) => (
+                        <option key={`remove:${r}`} value={`remove:${r}`}>
+                          ➖ {ROLE_LABEL[r]}
+                        </option>
+                      ))}
+                    </select>
+                    {!protectedTarget && (
+                      <button
+                        onClick={() => suspend.mutate({ id: u.id, suspended: !u.suspended })}
+                        className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
+                      >
+                        {u.suspended ? <ShieldCheck className="h-3 w-3" /> : <ShieldAlert className="h-3 w-3" />}
+                        {u.suspended ? "Reinstate" : "Suspend"}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setDmTo(u.id)}
+                      className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Send className="h-3 w-3" /> Message
+                    </button>
+                    {!protectedTarget && (
+                      <button
+                        onClick={() => {
+                          if (
+                            confirm(
+                              `Permanently delete ${u.full_name ?? u.email ?? "this user"}? This cannot be undone.`,
+                            )
+                          ) {
+                            del.mutate(u.id);
+                          }
+                        }}
+                        disabled={del.isPending}
+                        className="inline-flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 disabled:opacity-60"
+                      >
+                        <Trash2 className="h-3 w-3" /> Delete
+                      </button>
+                    )}
+                    {protectedTarget && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {isSelf ? "Your account" : "Admin protected"}
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
             </div>
             {dmTo === u.id && (
               <div className="sm:col-span-2 rounded-xl border border-border bg-muted/30 p-3">
