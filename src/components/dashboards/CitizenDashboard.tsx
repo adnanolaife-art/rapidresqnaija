@@ -226,6 +226,24 @@ export function CitizenDashboard() {
       <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <h2 className="text-lg font-semibold">Your reports</h2>
         <p className="text-sm text-muted-foreground">Latest first. Live-updated when responders act.</p>
+        {(() => {
+          const points: MapIncident[] = (incidents.data ?? []).map((i) => ({
+            id: i.id,
+            lat: i.lat as number | null,
+            lng: i.lng as number | null,
+            type: i.type,
+            status: i.status,
+            address: i.address,
+            description: i.description,
+            created_at: i.created_at,
+          }));
+          if (points.filter((p) => p.lat != null && p.lng != null).length === 0) return null;
+          return (
+            <div className="mt-4">
+              <IncidentsMap incidents={points} height={240} />
+            </div>
+          );
+        })()}
         <div className="mt-4 grid gap-3">
           {incidents.isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
           {incidents.data && incidents.data.length === 0 && (
