@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { IncidentType } from "@/components/dashboards/shared";
+import type { LayerGroup, Map as LeafletMap } from "leaflet";
 
 export type MapIncident = {
   id: string;
@@ -30,39 +30,34 @@ export function IncidentsMap({
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<unknown>(null);
-  const layerRef = useRef<unknown>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const layerRef = useRef<LayerGroup | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const L = (await import("leaflet")).default;
       if (cancelled || !containerRef.current) return;
-      // @ts-expect-error runtime shape
       if (!mapRef.current) {
-        // @ts-expect-error leaflet map
         mapRef.current = L.map(containerRef.current, { scrollWheelZoom: false }).setView(
           [9.082, 8.6753],
           6,
         );
-        // @ts-expect-error leaflet tile
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: "&copy; OpenStreetMap contributors",
           maxZoom: 19,
         }).addTo(mapRef.current);
       }
-      // @ts-expect-error remove old layer
       if (layerRef.current) mapRef.current.removeLayer(layerRef.current);
 
       const points = incidents.filter(
-        (i) => typeof i.lat === "number" && typeof i.lng === "number",
+        (i): i is MapIncident & { lat: number; lng: number } =>
+          typeof i.lat === "number" && typeof i.lng === "number",
       );
-      // @ts-expect-error leaflet group
       const group = L.layerGroup();
       for (const i of points) {
         const color = TYPE_COLOR[i.type] ?? "#525252";
-        // @ts-expect-error leaflet
-        const marker = L.circleMarker([i.lat!, i.lng!], {
+        const marker = L.circleMarker([i.lat, i.lng], {
           radius: 9,
           weight: 2,
           color: "#fff",
@@ -77,17 +72,13 @@ export function IncidentsMap({
             ${i.created_at ? `<div style="color:#888;margin-top:4px">${new Date(i.created_at).toLocaleString()}</div>` : ""}
           </div>`;
         marker.bindPopup(popup);
-        // @ts-expect-error layer add
         group.addLayer(marker);
       }
-      // @ts-expect-error map ref
       group.addTo(mapRef.current);
       layerRef.current = group;
 
       if (points.length > 0) {
-        // @ts-expect-error latlng bounds
-        const bounds = L.latLngBounds(points.map((p) => [p.lat!, p.lng!]));
-        // @ts-expect-error fit
+        const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number]));
         mapRef.current.fitBounds(bounds.pad(0.25), { maxZoom: 14 });
       }
     })();
@@ -98,7 +89,6 @@ export function IncidentsMap({
 
   useEffect(() => {
     return () => {
-      // @ts-expect-error cleanup on unmount
       if (mapRef.current) mapRef.current.remove();
       mapRef.current = null;
     };
