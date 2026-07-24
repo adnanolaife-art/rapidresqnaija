@@ -14,6 +14,14 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
   if (!isAdmin) throw new Error("Forbidden");
 }
 
+async function assertTargetNotAdmin(ctx: { supabase: any }, targetUserId: string) {
+  const { data: isAdmin } = await ctx.supabase.rpc("has_role", {
+    _user_id: targetUserId,
+    _role: "admin",
+  });
+  if (isAdmin) throw new Error("Administrator accounts are protected from this action.");
+}
+
 /* -------------------- USERS -------------------- */
 
 export const adminListUsers = createServerFn({ method: "GET" })
