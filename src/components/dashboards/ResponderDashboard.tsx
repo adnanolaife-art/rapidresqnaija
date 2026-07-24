@@ -10,6 +10,7 @@ import {
   updateIncidentStatus,
   getIncidentMedia,
 } from "@/lib/incidents.functions";
+import { IncidentsMap, type MapIncident } from "@/components/maps/IncidentsMap";
 import { IncidentStatusBadge, IncidentTypeIcon, TYPE_LABEL, type IncidentType } from "./shared";
 
 const NEXT: Record<string, { label: string; next: "accepted" | "en_route" | "on_scene" | "resolved" }[]> = {
@@ -48,6 +49,24 @@ export function ResponderDashboard({ role }: { role: AppRole }) {
           Live incidents assigned to your unit. Accept and update as you respond.
         </p>
       </div>
+      {(() => {
+        const points: MapIncident[] = (queue.data ?? []).map((i) => ({
+          id: i.id,
+          lat: i.lat as number | null,
+          lng: i.lng as number | null,
+          type: i.type,
+          status: i.status,
+          address: i.address,
+          description: i.description,
+          created_at: i.created_at,
+        }));
+        if (points.filter((p) => p.lat != null && p.lng != null).length === 0) return null;
+        return (
+          <div className="mb-4">
+            <IncidentsMap incidents={points} height={300} />
+          </div>
+        );
+      })()}
       <div className="grid gap-3">
         {queue.isLoading && <div className="text-sm text-muted-foreground">Loading queue…</div>}
         {queue.data && queue.data.length === 0 && (

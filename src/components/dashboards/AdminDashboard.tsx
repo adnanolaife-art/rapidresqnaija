@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { listAllIncidents } from "@/lib/incidents.functions";
 import {
   adminBroadcast,
+  adminDeleteUser,
   adminListConversations,
   adminListUsers,
   adminSendDirectMessage,
@@ -15,7 +16,8 @@ import {
   adminSuspendUser,
 } from "@/lib/admin.functions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ROLE_LABEL, type AppRole } from "@/hooks/useAuth";
+import { ROLE_LABEL, useAuth, type AppRole } from "@/hooks/useAuth";
+import { IncidentsMap, type MapIncident } from "@/components/maps/IncidentsMap";
 import { IncidentStatusBadge, IncidentTypeIcon, TYPE_LABEL, type IncidentType } from "./shared";
 
 const ROLES: AppRole[] = [
@@ -84,12 +86,32 @@ function IncidentsPanel() {
     };
   }, [all.data]);
 
+  const mapPoints: MapIncident[] = (all.data ?? []).map((i) => ({
+    id: i.id,
+    lat: i.lat as number | null,
+    lng: i.lng as number | null,
+    type: i.type,
+    status: i.status,
+    address: i.address,
+    description: i.description,
+    created_at: i.created_at,
+  }));
+
   return (
     <div>
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <Stat label="Total incidents" value={stats.total} />
         <Stat label="Active" value={stats.active} />
         <Stat label="Resolved" value={stats.resolved} />
+      </div>
+      <div className="mb-4">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Live incident map</h2>
+          <span className="text-xs text-muted-foreground">
+            {mapPoints.filter((p) => p.lat != null && p.lng != null).length} geolocated
+          </span>
+        </div>
+        <IncidentsMap incidents={mapPoints} height={380} />
       </div>
       <div className="rounded-2xl border border-border bg-card">
         <div className="border-b border-border px-4 py-3 text-sm font-semibold">Recent incidents (live)</div>
@@ -118,10 +140,12 @@ function IncidentsPanel() {
 
 function UsersPanel() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const listFn = useServerFn(adminListUsers);
   const suspendFn = useServerFn(adminSuspendUser);
   const roleFn = useServerFn(adminSetRole);
   const dmFn = useServerFn(adminSendDirectMessage);
+  const deleteFn = useServerFn(adminDeleteUser);
   const [q, setQ] = useState("");
   const [dmTo, setDmTo] = useState<string | null>(null);
   const [dmBody, setDmBody] = useState("");
@@ -169,6 +193,15 @@ function UsersPanel() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const del = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { userId: id } }),
+    onSuccess: () => {
+      toast.success("User deleted");
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   return (
     <div className="rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
@@ -206,41 +239,74 @@ function UsersPanel() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <select
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (!v) return;
-                  const [action, role] = v.split(":") as ["add" | "remove", AppRole];
-                  setRole.mutate({ id: u.id, action, role });
-                  e.target.value = "";
-                }}
-                className="rounded-md border border-border bg-background px-2 py-1 text-xs"
-              >
-                <option value="">Roles…</option>
-                {ROLES.map((r) => (
-                  <option key={`add:${r}`} value={`add:${r}`}>
-                    ➕ {ROLE_LABEL[r]}
-                  </option>
-                ))}
-                {ROLES.map((r) => (
-                  <option key={`remove:${r}`} value={`remove:${r}`}>
-                    ➖ {ROLE_LABEL[r]}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => suspend.mutate({ id: u.id, suspended: !u.suspended })}
-                className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
-              >
-                {u.suspended ? <ShieldCheck className="h-3 w-3" /> : <ShieldAlert className="h-3 w-3" />}
-                {u.suspended ? "Reinstate" : "Suspend"}
-              </button>
-              <button
-                onClick={() => setDmTo(u.id)}
-                className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                <Send className="h-3 w-3" /> Message
-              </button>
+              {(() => {
+                const isSelf = u.id === user?.id;
+                const isAdminTarget = (u.roles ?? []).includes("admin");
+                const protectedTarget = isSelf || isAdminTarget;
+                return (
+                  <>
+                    <select
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (!v) return;
+                        const [action, role] = v.split(":") as ["add" | "remove", AppRole];
+                        setRole.mutate({ id: u.id, action, role });
+                        e.target.value = "";
+                      }}
+                      className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                    >
+                      <option value="">Roles…</option>
+                      {ROLES.map((r) => (
+                        <option key={`add:${r}`} value={`add:${r}`}>
+                          ➕ {ROLE_LABEL[r]}
+                        </option>
+                      ))}
+                      {ROLES.map((r) => (
+                        <option key={`remove:${r}`} value={`remove:${r}`}>
+                          ➖ {ROLE_LABEL[r]}
+                        </option>
+                      ))}
+                    </select>
+                    {!protectedTarget && (
+                      <button
+                        onClick={() => suspend.mutate({ id: u.id, suspended: !u.suspended })}
+                        className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
+                      >
+                        {u.suspended ? <ShieldCheck className="h-3 w-3" /> : <ShieldAlert className="h-3 w-3" />}
+                        {u.suspended ? "Reinstate" : "Suspend"}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setDmTo(u.id)}
+                      className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Send className="h-3 w-3" /> Message
+                    </button>
+                    {!protectedTarget && (
+                      <button
+                        onClick={() => {
+                          if (
+                            confirm(
+                              `Permanently delete ${u.full_name ?? u.email ?? "this user"}? This cannot be undone.`,
+                            )
+                          ) {
+                            del.mutate(u.id);
+                          }
+                        }}
+                        disabled={del.isPending}
+                        className="inline-flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 disabled:opacity-60"
+                      >
+                        <Trash2 className="h-3 w-3" /> Delete
+                      </button>
+                    )}
+                    {protectedTarget && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {isSelf ? "Your account" : "Admin protected"}
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
             </div>
             {dmTo === u.id && (
               <div className="sm:col-span-2 rounded-xl border border-border bg-muted/30 p-3">

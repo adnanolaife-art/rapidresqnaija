@@ -88,9 +88,9 @@ function AuthPage() {
         </Link>
         <div className="relative">
           <h2 className="text-4xl font-extrabold leading-tight">
-            One tap.
+            Every second counts.
             <br />
-            Help on the way.
+            Help is closer than you think.
           </h2>
           <p className="mt-4 max-w-sm text-primary-foreground/85">
             Citizens report. Responders receive. Admins oversee. All in one secure network.
