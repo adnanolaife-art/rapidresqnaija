@@ -193,6 +193,15 @@ function UsersPanel() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const del = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { userId: id } }),
+    onSuccess: () => {
+      toast.success("User deleted");
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   return (
     <div className="rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
