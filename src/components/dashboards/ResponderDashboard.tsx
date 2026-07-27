@@ -42,15 +42,94 @@ export function ResponderDashboard({ role }: { role: AppRole }) {
   });
 
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [alertsOn, setAlertsOn] = useState(true);
+  const seenIds = useRef<Set<string>>(new Set());
+
+  // Seed seen set once initial queue loads so we only alert on truly new inserts
+  useEffect(() => {
+    if (queue.data) queue.data.forEach((i) => seenIds.current.add(i.id));
+  }, [queue.data]);
+
+  // Ask for browser notification permission once
+  useEffect(() => {
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
+  // Realtime subscription — RLS filters to this responder's matching incident types
+  useEffect(() => {
+    const channel = supabase
+      .channel(`responder-incidents-${role}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "incidents" },
+        (payload) => {
+          const row = payload.new as { id: string; type: string; address: string | null };
+          if (seenIds.current.has(row.id)) return;
+          seenIds.current.add(row.id);
+          qc.invalidateQueries({ queryKey: ["responder-queue"] });
+          if (!alertsOn) return;
+          const title = `New ${TYPE_LABEL[row.type as IncidentType] ?? "incident"} alert`;
+          const body = row.address ?? "Tap to view and respond";
+          toast.warning(title, { description: body, duration: 10000 });
+          try {
+            if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+              new Notification(title, { body, tag: row.id });
+            }
+          } catch {}
+          try {
+            // Short attention chime via WebAudio (no asset needed)
+            const AC = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+            const ctx = new AC();
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(880, ctx.currentTime);
+            o.frequency.setValueAtTime(1320, ctx.currentTime + 0.18);
+            g.gain.setValueAtTime(0.0001, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+            o.connect(g).connect(ctx.destination);
+            o.start();
+            o.stop(ctx.currentTime + 0.65);
+          } catch {}
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "incidents" },
+        () => qc.invalidateQueries({ queryKey: ["responder-queue"] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc, role, alertsOn]);
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">{ROLE_LABEL[role]} queue</h1>
-        <p className="text-sm text-muted-foreground">
-          Live incidents assigned to your unit. Accept and update as you respond.
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">{ROLE_LABEL[role]} queue</h1>
+          <p className="text-sm text-muted-foreground">
+            Live incidents assigned to your unit. New reports alert you instantly.
+          </p>
+        </div>
+        <button
+          onClick={() => setAlertsOn((v) => !v)}
+          className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${
+            alertsOn
+              ? "border-primary/40 bg-primary/10 text-primary"
+              : "border-border bg-muted text-muted-foreground"
+          }`}
+          title="Toggle realtime alerts"
+        >
+          <BellRing className={`h-3.5 w-3.5 ${alertsOn ? "animate-pulse" : ""}`} />
+          {alertsOn ? "Alerts on" : "Alerts off"}
+        </button>
       </div>
+
       {(() => {
         const points: MapIncident[] = (queue.data ?? []).map((i) => ({
           id: i.id,
