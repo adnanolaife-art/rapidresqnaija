@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, MapPin, Image as ImageIcon } from "lucide-react";
+import { Loader2, MapPin, Image as ImageIcon, BellRing } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
 
 import { ROLE_LABEL, type AppRole } from "@/hooks/useAuth";
 import {
